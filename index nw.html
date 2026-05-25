@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polemik PKL di CFD Jakarta</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C8973A;
+    --gold-light: #F0C97A;
+    --dark: #0D0D0D;
+    --dark2: #1A1A1A;
+    --dark3: #252525;
+    --cream: #F5F0E8;
+    --cream2: #EDE8DC;
+    --text: #E8E2D6;
+    --text-muted: #9A9488;
+    --red: #C0392B;
+    --green: #1A6B45;
+    --accent: #8B6914;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* LOADING SCREEN */
+  #loading {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--dark);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1.5rem;
+    transition: opacity 0.6s ease;
+  }
+  #loading.hide { opacity: 0; pointer-events: none; }
+  .loader-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+  .loader-bar {
+    width: 200px; height: 2px;
+    background: var(--dark3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .loader-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 2px;
+    animation: load 1.8s ease forwards;
+  }
+  @keyframes load { from { width: 0; } to { width: 100%; } }
+
+  /* NAVBAR */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(13,13,13,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(200,151,58,0.2);
+    padding: 0 2rem;
+  }
+  .nav-inner {
+    max-width: 1400px; margin: 0 auto;
+    display: flex; align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .nav-links {
+    display: flex; align-items: center;
+    gap: 0; list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a {
+    display: block;
+    padding: 0 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.2s;
+    height: 56px;
+    line-height: 56px;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-links a.active {
+    color: var(--cream);
+    border-bottom: 2px solid var(--gold);
+    padding-bottom: 6px;
+    transition: color 0.15s, border-bottom-color 0.15s;
+  }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    position: relative;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, #1a0e00 0%, #0D0D0D 50%, #050a0a 100%);
+  }
+  .hero-pattern {
+    position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 40px,
+        rgba(200,151,58,0.03) 40px,
+        rgba(200,151,58,0.03) 41px
+      );
+  }
+  .hero-img-wrapper {
+    position: absolute; inset: 0;
+    overflow: hidden;
+  }
+  #hero-photo {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.25;
+    display: none;
+  }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,13,13,1) 0%, rgba(13,13,13,0.5) 40%, rgba(13,13,13,0.3) 100%);
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    max-width: 900px;
+    animation: fadeUp 1.2s ease 0.3s both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-60px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(60px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(200, 151, 58, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(200, 151, 58, 0.4); }
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .hero-tag {
+    display: inline-block;
+    border: 1px solid rgba(200,151,58,0.4);
+    color: var(--gold);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.4rem 1.2rem;
+    border-radius: 2px;
+    margin-bottom: 2rem;
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--cream);
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.01em;
+  }
+  .hero-title em {
+    color: var(--gold);
+    font-style: italic;
+  }
+  .hero-sub {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    font-style: italic;
+    color: var(--text-muted);
+    max-width: 650px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.8;
+  }
+  .hero-btns {
+    display: flex; gap: 1rem;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: var(--dark);
+    padding: 0.85rem 2rem;
+    border-radius: 2px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(200, 151, 58, 0.3); }
+  .btn-primary { box-shadow: 0 4px 12px rgba(200, 151, 58, 0.1); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .btn-outline {
+    border: 1px solid rgba(200,151,58,0.4);
+    color: var(--gold);
+    padding: 0.85rem 2rem;
+    border-radius: 2px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, transform 0.2s;
+    display: inline-block;
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold-light); transform: translateY(-3px); background: rgba(200, 151, 58, 0.08); }
+  .btn-outline { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  /* PHOTO UPLOAD BADGE */
+  .upload-badge {
+    position: absolute; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 0.5rem;
+    animation: fadeUp 1s ease 0.8s both;
+  }
+  .upload-link {
+    color: var(--gold);
+    text-decoration: underline;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .upload-link:hover { color: var(--cream); }
+  .upload-url {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: min(100%, 320px);
+  }
+  .upload-url input {
+    flex: 1 1 180px;
+    min-width: 160px;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(200,151,58,0.25);
+    border-radius: 4px;
+    background: rgba(13,13,13,0.7);
+    color: var(--text);
+  }
+  .upload-url input::placeholder { color: rgba(154,148,136,0.7); }
+  .upload-url-btn {
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    border-radius: 4px;
+    padding: 0.65rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .upload-url-btn:hover { background: var(--gold-light); }
+  .upload-hint { font-size: 0.68rem; color: var(--text-muted); }
+
+  /* SECTION STYLES */
+  section { padding: 5rem 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.8rem;
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(200,151,58,0.2);
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+  }
+  .section-body {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    line-height: 1.85;
+    max-width: 750px;
+  }
+  .divider {
+    height: 1px;
+    background: rgba(200,151,58,0.12);
+    margin: 0 2rem;
+  }
+
+  /* QUOTE */
+  #quote {
+    background: var(--dark2);
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  .quote-text {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.3rem, 3vw, 2rem);
+    font-style: italic;
+    color: var(--cream);
+    max-width: 800px;
+    margin: 0 auto 1rem;
+    line-height: 1.5;
+  }
+  .quote-text::before { content: '\201C'; color: var(--gold); font-size: 2em; line-height: 0; vertical-align: -0.4em; margin-right: 0.1em; }
+  .quote-text::after { content: '\201D'; color: var(--gold); font-size: 2em; line-height: 0; vertical-align: -0.4em; margin-left: 0.1em; }
+  .quote-src { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 0.05em; }
+
+  /* LATAR BELAKANG */
+  #tim { background: var(--dark2); }
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .team-card {
+    background: var(--dark);
+    border: 1px solid rgba(200,151,58,0.12);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+  .team-card:hover { transform: translateY(-4px); border-color: rgba(200,151,58,0.25); }
+  .team-card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+  }
+  .team-card-body {
+    padding: 1.4rem;
+  }
+  .team-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: var(--cream);
+    margin-bottom: 0.4rem;
+  }
+  .team-card p {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .team-card small {
+    display: block;
+    margin-top: 0.8rem;
+    color: var(--gold);
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  #latar { background: var(--dark); }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .info-card {
+    background: var(--dark2);
+    border: 1px solid rgba(200,151,58,0.12);
+    border-radius: 4px;
+    padding: 1.8rem;
+    transition: border-color 0.3s;
+  }
+  .info-card:hover { border-color: rgba(200,151,58,0.4); }
+  .info-icon {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    display: block;
+  }
+  .info-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+  }
+  .info-card p {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* KRONOLOGI */
+  #kronologi { background: var(--dark2); }
+  .timeline {
+    position: relative;
+    margin-top: 3rem;
+    padding-left: 2rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+  }
+  .tl-item {
+    position: relative;
+    padding-left: 2.5rem;
+    padding-bottom: 3rem;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .tl-item.visible { opacity: 1; transform: translateX(0); }
+  .tl-dot {
+    position: absolute;
+    left: -0.45rem; top: 0.3rem;
+    width: 14px; height: 14px;
+    background: var(--gold);
+    border-radius: 50%;
+    border: 3px solid var(--dark2);
+  }
+  .tl-date {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.4rem;
+  }
+  .tl-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--cream);
+    margin-bottom: 0.5rem;
+  }
+  .tl-body {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ISI POLEMIK */
+  #polemik { background: var(--dark); }
+  .polemik-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .polemik-card {
+    background: var(--dark2);
+    border-top: 3px solid var(--gold);
+    border-radius: 0 0 4px 4px;
+    padding: 1.8rem;
+  }
+  .polemik-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--cream);
+    margin-bottom: 1rem;
+  }
+  .polemik-card ul {
+    list-style: none;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+  }
+  .polemik-card ul li {
+    padding: 0.4rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+    border-bottom: 1px solid rgba(200,151,58,0.06);
+  }
+  .polemik-card ul li::before {
+    content: '—';
+    position: absolute; left: 0;
+    color: var(--gold);
+    font-size: 0.8rem;
+  }
+
+  /* PRO KONTRA */
+  #prokontra { background: var(--dark2); }
+  .pk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2.5rem;
+  }
+  @media (max-width: 600px) { .pk-grid { grid-template-columns: 1fr; } }
+  .pk-card { padding: 2rem; border-radius: 4px; }
+  .pk-pro {
+    background: rgba(26, 107, 69, 0.1);
+    border: 1px solid rgba(26, 107, 69, 0.3);
+  }
+  .pk-kontra {
+    background: rgba(192, 57, 43, 0.1);
+    border: 1px solid rgba(192, 57, 43, 0.3);
+  }
+  .pk-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 1.2rem;
+  }
+  .pk-pro h3 { color: #4CAF88; }
+  .pk-kontra h3 { color: #E57368; }
+  .pk-item {
+    display: flex; align-items: flex-start; gap: 0.7rem;
+    padding: 0.6rem 0;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .pk-icon-pro { color: #4CAF88; flex-shrink: 0; margin-top: 0.2rem; }
+  .pk-icon-kontra { color: #E57368; flex-shrink: 0; margin-top: 0.2rem; }
+
+  /* REFORMASI */
+  #reformasi { background: var(--dark); }
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+  .ref-card {
+    background: var(--dark2);
+    border-left: 3px solid var(--gold);
+    padding: 1.4rem 1.5rem;
+    border-radius: 0 4px 4px 0;
+  }
+  .ref-card h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+  .ref-card p {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* HUKUM */
+  #hukum { background: var(--dark2); }
+  .hk-box {
+    background: var(--dark3);
+    border: 1px solid rgba(200,151,58,0.15);
+    border-radius: 4px;
+    padding: 2rem;
+    margin-top: 2rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+  }
+  .hk-box h4 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+  }
+  .hk-box ul { list-style: none; margin-top: 0.8rem; }
+  .hk-box ul li { padding: 0.3rem 0 0.3rem 1.2rem; position: relative; }
+  .hk-box ul li::before { content: '›'; position: absolute; left: 0; color: var(--gold); }
+  .hk-note {
+    margin-top: 1rem;
+    padding: 1rem 1.2rem;
+    background: rgba(200,151,58,0.07);
+    border-left: 2px solid var(--gold);
+    font-style: italic;
+    color: var(--cream2);
+    font-size: 0.92rem;
+  }
+
+  /* DAMPAK */
+  #dampak { background: var(--dark); }
+  .dampak-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .dampak-card {
+    background: var(--dark2);
+    border-radius: 4px;
+    padding: 1.6rem;
+    border-bottom: 2px solid var(--gold);
+  }
+  .dampak-card .d-icon { font-size: 1.8rem; margin-bottom: 0.8rem; display: block; }
+  .dampak-card h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+  }
+  .dampak-card ul {
+    list-style: none;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+  .dampak-card ul li { padding: 0.25rem 0; border-bottom: 1px solid rgba(200,151,58,0.06); }
+  .dampak-card ul li::before { content: '· '; color: var(--gold); }
+
+  /* SOLUSI */
+  #solusi { background: var(--dark2); }
+  .solusi-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+  .solusi-item {
+    background: var(--dark);
+    border: 1px solid rgba(200,151,58,0.1);
+    border-radius: 4px;
+    padding: 1.4rem 1.6rem;
+    display: flex; align-items: flex-start; gap: 1rem;
+    transition: border-color 0.3s;
+  }
+  .solusi-item:hover { border-color: rgba(200,151,58,0.4); }
+  .solusi-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    background: var(--gold);
+    color: var(--dark);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 500; font-size: 0.85rem;
+  }
+  .solusi-item p {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding-top: 0.3rem;
+  }
+
+  /* ANALISIS */
+  #analisis { background: var(--dark); }
+  .analisis-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2.5rem;
+  }
+  @media (max-width: 600px) { .analisis-split { grid-template-columns: 1fr; } }
+  .analisis-box {
+    background: var(--dark2);
+    padding: 2rem;
+    border-radius: 4px;
+    border: 1px solid rgba(200,151,58,0.1);
+  }
+  .analisis-box h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(200,151,58,0.15);
+    padding-bottom: 0.8rem;
+  }
+  .analisis-box p {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.75;
+  }
+
+  /* POLLING */
+  #polling { background: var(--dark2); text-align: center; }
+  .poll-box {
+    max-width: 500px;
+    margin: 2.5rem auto 0;
+    background: var(--dark);
+    border: 1px solid rgba(200,151,58,0.2);
+    border-radius: 4px;
+    padding: 2.5rem;
+  }
+  .poll-question {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--cream);
+    margin-bottom: 1.8rem;
+    line-height: 1.5;
+  }
+  .poll-btn {
+    display: block; width: 100%;
+    background: var(--dark2);
+    border: 1px solid rgba(200,151,58,0.2);
+    color: var(--text-muted);
+    padding: 0.85rem 1.5rem;
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-bottom: 0.8rem;
+    text-align: left;
+    transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .poll-btn:hover { border-color: var(--gold); color: var(--cream); }
+  .poll-btn.voted { border-color: var(--gold); color: var(--cream); }
+  .poll-bar {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: rgba(200,151,58,0.12);
+    transition: width 0.6s ease;
+    pointer-events: none;
+  }
+  .poll-btn span { position: relative; z-index: 1; }
+  .poll-pct {
+    position: absolute; right: 1rem; top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem; color: var(--gold); z-index: 1;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .poll-btn.voted .poll-pct { opacity: 1; }
+  .poll-total { margin-top: 1rem; font-size: 0.78rem; color: var(--text-muted); }
+
+  /* FAQ */
+  #faq { background: var(--dark); }
+  .faq-list { margin-top: 2.5rem; }
+  .faq-item { border-bottom: 1px solid rgba(200,151,58,0.1); }
+  .faq-q {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 1.3rem 0;
+    cursor: pointer;
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.02rem;
+    color: var(--cream);
+    gap: 1rem; user-select: none;
+  }
+  .faq-arrow { color: var(--gold); font-size: 1.2rem; flex-shrink: 0; transition: transform 0.3s; }
+  .faq-item.open .faq-arrow { transform: rotate(45deg); }
+  .faq-a {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.95rem; color: var(--text-muted);
+    line-height: 1.75; max-height: 0;
+    overflow: hidden; transition: max-height 0.4s ease, padding 0.3s;
+  }
+  .faq-item.open .faq-a { max-height: 300px; padding-bottom: 1.2rem; }
+
+  /* GALERI */
+  #galeri { background: var(--dark2); }
+  .galeri-upload-area {
+    border: 2px dashed rgba(200,151,58,0.3);
+    border-radius: 4px; padding: 3rem;
+    text-align: center; cursor: pointer;
+    margin-top: 2rem; transition: border-color 0.2s;
+  }
+  .galeri-upload-area:hover { border-color: var(--gold); }
+  .galeri-upload-area p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
+  .galeri-upload-area strong { color: var(--gold); font-size: 1.1rem; }
+  .galeri-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.8rem; margin-top: 1.5rem;
+  }
+  .galeri-item {
+    aspect-ratio: 4/3; overflow: hidden;
+    border-radius: 4px; border: 1px solid rgba(200,151,58,0.1);
+    position: relative;
+  }
+  .galeri-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+  .galeri-item:hover img { transform: scale(1.05); }
+  .galeri-del {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(13,13,13,0.8); border: none;
+    color: var(--text-muted); font-size: 0.8rem;
+    border-radius: 50%; width: 24px; height: 24px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s;
+  }
+  .galeri-del:hover { color: #E57368; }
+
+  /* DOCUMENTATION SLIDER */
+  .doc-slider { display:flex; align-items:center; gap:1rem; margin-top:1.5rem; }
+  .doc-viewport { overflow:hidden; width:100%; max-width:700px; margin:0 auto; }
+  .doc-track { display:flex; transition:transform 0.35s ease; will-change:transform; }
+  .doc-slide { min-width:100%; display:flex; align-items:center; justify-content:center; }
+  .doc-slide img { width:100%; height:360px; object-fit:cover; border-radius:6px; border:1px solid rgba(200,151,58,0.08); }
+  .doc-prev, .doc-next { background:rgba(13,13,13,0.8); color:var(--gold); border:none; padding:0.6rem 0.9rem; font-size:1.6rem; border-radius:6px; cursor:pointer; }
+  .doc-prev:hover, .doc-next:hover { background:rgba(20,20,20,0.95); }
+
+  /* REFERENSI */
+  #referensi { background: var(--dark); }
+  .ref-list { margin-top: 2rem; font-family: 'Source Serif 4', serif; counter-reset: ref-counter; list-style: none; }
+  .ref-list li {
+    padding: 0.6rem 0 0.6rem 1.5rem;
+    position: relative; color: var(--text-muted);
+    font-size: 0.92rem; border-bottom: 1px solid rgba(200,151,58,0.07);
+  }
+  .ref-list li::before {
+    content: counter(ref-counter, decimal-leading-zero);
+    counter-increment: ref-counter;
+    position: absolute; left: 0;
+    color: var(--gold); font-size: 0.78rem; top: 0.8rem;
+  }
+
+  /* KESIMPULAN */
+  #kesimpulan { background: var(--dark2); text-align: center; }
+  .kesim-box {
+    max-width: 700px; margin: 2rem auto 0;
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.05rem; color: var(--text-muted); line-height: 1.85;
+  }
+  .kesim-highlight {
+    display: inline-block;
+    background: rgba(200,151,58,0.1);
+    border-left: 3px solid var(--gold);
+    padding: 1.2rem 1.8rem; margin: 1.5rem 0;
+    text-align: left; border-radius: 0 4px 4px 0;
+    font-style: italic; color: var(--cream);
+  }
+
+  /* FOOTER */
+  footer {
+    background: #080808;
+    border-top: 1px solid rgba(200,151,58,0.15);
+    padding: 3rem 2rem; text-align: center;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; color: var(--gold); margin-bottom: 1rem;
+  }
+  .footer-info { font-size: 0.85rem; color: var(--text-muted); line-height: 2; }
+  .footer-info strong { color: var(--cream); }
+  .footer-copy { margin-top: 1.5rem; font-size: 0.75rem; color: rgba(154,148,136,0.4); letter-spacing: 0.08em; }
+
+  /* BACK TO TOP */
+  #btt {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+    width: 44px; height: 44px; background: var(--gold);
+    color: var(--dark); border: none; border-radius: 50%;
+    font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  #btt.show { opacity: 1; transform: translateY(0); }
+  #btt:hover { background: var(--gold-light); }
+
+  /* SCROLL ANIMATION */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); animation: fadeUp 0.8s ease forwards; }
+  
+  /* MEMBER NAME LINK ANIMATIONS */
+  .team-member-link { color: var(--cream); text-decoration: none; cursor: pointer; position: relative; transition: all 0.3s ease; }
+  .team-member-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--gold); transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .team-member-link:hover { color: var(--gold); transform: translateX(2px); }
+  .team-member-link:hover::after { width: 100%; }
+
+  .ig-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 6px; color: var(--gold);
+    background: transparent; text-decoration: none; transition: background 0.18s, color 0.18s;
+  }
+  .ig-badge svg { color: var(--gold); width: 18px; height: 18px; }
+  .ig-badge:hover { background: rgba(200,151,58,0.08); color: var(--cream); }
+  
+  /* CARD ANIMATIONS */
+  .team-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .team-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 40px rgba(200, 151, 58, 0.15); }
+  
+  .info-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .info-card:hover { transform: translateY(-6px); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(200, 151, 58, 0.08); }
+  
+  .polemik-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .polemik-card:hover { transform: translateY(-6px); border-top-color: var(--gold-light); box-shadow: 0 12px 28px rgba(200, 151, 58, 0.12); }
+  
+  .dampak-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .dampak-card:hover { transform: translateY(-6px); border-bottom-color: var(--gold-light); box-shadow: 0 12px 28px rgba(200, 151, 58, 0.12); }
+  
+  .ref-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .ref-card:hover { transform: translateX(4px); border-left-color: var(--gold-light); box-shadow: -4px 0 16px rgba(200, 151, 58, 0.15); }
+  
+  .solusi-item { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .solusi-item:hover { transform: translateY(-4px); border-color: rgba(200, 151, 58, 0.4); box-shadow: 0 12px 28px rgba(200, 151, 58, 0.1); }
+  
+  .solusi-num { transition: all 0.3s ease; font-size: 0.85rem; }
+  .solusi-item:hover .solusi-num { transform: scale(1.1) rotate(-5deg); background: var(--gold-light); }
+  
+  /* TIMELINE ANIMATIONS */
+  .tl-item { transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .tl-dot { transition: all 0.3s ease; box-shadow: 0 0 0 3px var(--dark2); }
+  .tl-item:hover .tl-dot { box-shadow: 0 0 12px rgba(200, 151, 58, 0.5), inset 0 0 0 3px var(--dark2); transform: scale(1.3); }
+  
+  /* FAQ ARROW SMOOTH ROTATE */
+  .faq-arrow { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  
+  /* REFINED ELEGANT ANIMATIONS */
+  @keyframes softFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes softGlow {
+    0%, 100% {
+      text-shadow: 0 0 0 rgba(200,151,58,0);
+    }
+    50% {
+      text-shadow: 0 0 12px rgba(200,151,58,0.18);
+    }
+  }
+
+  @keyframes lineExpand {
+    from {
+      width: 0;
+      opacity: 0;
+    }
+    to {
+      width: 100%;
+      opacity: 1;
+    }
+  }
+
+  .section-label {
+    overflow: hidden;
+    animation: softFadeUp 0.8s ease both;
+  }
+
+  .section-label::after {
+    animation: lineExpand 1.2s ease forwards;
+    transform-origin: left;
+  }
+
+  .section-title {
+    animation: softFadeUp 0.9s ease both;
+    background: linear-gradient(90deg, var(--cream), var(--gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 100% 100%;
+    text-shadow: none !important;
+  }
+
+  .section-title:hover {
+    animation: softGlow 2.5s ease-in-out infinite;
+  }
+
+  .section-body {
+    animation: softFadeUp 1s ease both;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+    animation: none;
+  }
+
+  /* SOFTER CARD INTERACTIONS */
+  .team-card:hover,
+  .info-card:hover,
+  .polemik-card:hover,
+  .dampak-card:hover,
+  .solusi-item:hover {
+    transform: translateY(-5px);
+  }
+
+  .ref-card:hover {
+    transform: translateX(3px);
+  }
+
+  /* SMOOTHER HERO TEXT */
+  .hero-title,
+  .hero-sub,
+  .hero-tag {
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+
+  @media (max-width: 768px) { .nav-links { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="loader-title">Polemik PKL di CFD Jakarta</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- BACK TO TOP -->
+<button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo">CFD Polemik</a>
+    <ul class="nav-links">
+      <li><a href="#latar">Latar Belakang</a></li>
+      <li><a href="#kronologi">Kronologi</a></li>
+      <li><a href="#polemik">Isi Polemik</a></li>
+      <li><a href="#prokontra">Pro-Kontra</a></li>
+      <li><a href="#reformasi">Reformasi</a></li>
+      <li><a href="#hukum">Hukum</a></li>
+      <li><a href="#dampak">Dampak</a></li>
+      <li><a href="#solusi">Solusi</a></li>
+      <li><a href="#analisis">Analisis</a></li>
+      <li><a href="#polling">Polling</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#galeri">Galeri</a></li>
+      <li><a href="#kesimpulan">Kesimpulan</a></li>
+      <li><a href="#referensi">Referensi</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-pattern"></div>
+  <div class="hero-img-wrapper">
+    <img id="hero-photo" src="" alt="CFD Jakarta">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-tag">Studi Kasus Kebijakan Publik · Jakarta 2026</div>
+    <h1 class="hero-title">Polemik <em>PKL</em> di<br>CFD Sudirman–Thamrin</h1>
+    <p class="hero-sub">Ketika aturan ketertiban bertemu dengan perjuangan ekonomi masyarakat kecil di ruang publik Jakarta.</p>
+    <div class="hero-btns">
+      <a href="#latar" class="btn-primary">Pelajari Kasus</a>
+      <a href="#kronologi" class="btn-outline">Lihat Kronologi</a>
+    </div>
+  
+<!-- QUOTE -->
+<div id="quote">
+  <p class="quote-text">Kebijakan publik bukan hanya soal aturan, tetapi juga tentang keadilan bagi masyarakat kecil.</p>
+  <p class="quote-src">— Prinsip Kebijakan Publik Berkeadilan</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ANGGOTA KELOMPOK -->
+<section id="tim">
+  <div class="container">
+    <p class="section-label">00 · Anggota Kelompok</p>
+    <h2 class="section-title">Tim Pembuat Website</h2>
+    <p class="section-body reveal">Website ini disusun secara kolaboratif oleh anggota kelompok melalui pembagian tugas di bidang riset materi, pengembangan website (coding), desain visual, dan penyusunan isi konten untuk menghasilkan media informasi yang informatif, menarik, dan edukatif.</p>
+    <div class="team-grid">
+      <div class="team-card reveal">
+        <img src="FTO PUTRI 2.jpeg" alt="Foto Ardillia Putri Hartanto">
+        <div class="team-card-body">
+          <h3><a class="team-member-link" href="#" data-instagram="https://www.instagram.com/ardilliyya?igsh=MXg3MnhweWhlOXU3bQ%3D%3D&utm_source=qr">Ardillia Putri Hartanto</a></h3>
+          <p>XI SIJA 2 (03)</p>
+          <small>Web Developer</small>
+          <div style="margin-top:0.6rem;">
+            <a class="ig-badge" href="#" data-instagram="https://www.instagram.com/ardilliyya?igsh=MXg3MnhweWhlOXU3bQ%3D%3D&utm_source=qr" title="Buka Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="team-card reveal">
+        <img src="FTO SWAK 2.jpeg" alt="Foto Swa'ana Salwa Igrimatul Aisyah">
+        <div class="team-card-body">
+          <h3><a class="team-member-link" href="#" data-instagram="https://www.instagram.com/swwaaana_?igsh=cnZkMnhzeGd5bXIx">Swa'ana Salwa Igrimatul Aisyah</a></h3>
+          <p>XI SIJA 2 (34)</p>
+          <small>Content Researcher</small>
+          <div style="margin-top:0.6rem;">
+            <a class="ig-badge" href="#" data-instagram="https://www.instagram.com/swwaaana_?igsh=cnZkMnhzeGd5bXIx" title="Buka Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const input = document.getElementById('bg-upload');
+  const img = document.getElementById('hero-photo');
+  const removeBtn = document.getElementById('remove-bg');
+  const toggleUrl = document.getElementById('toggle-url');
+  const uploadUrl = document.getElementById('upload-url');
+  const urlField = document.getElementById('bg-url');
+  const applyUrl = document.getElementById('apply-url');
+
+  function setHero(src){
+    if(!src){
+      img.src = '';
+      img.style.display = 'none';
+      localStorage.removeItem('heroBg');
+      return;
+    }
+    img.src = src;
+    img.style.display = 'block';
+    img.style.opacity = 0.35;
+    localStorage.setItem('heroBg', src);
+  }
+
+  if(input){
+    input.addEventListener('change', e=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){ setHero(ev.target.result); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if(toggleUrl){
+    toggleUrl.addEventListener('click', e=>{
+      e.preventDefault();
+      uploadUrl.style.display = uploadUrl.style.display === 'none' ? 'flex' : 'none';
+      uploadUrl.style.gap = '0.5rem';
+      uploadUrl.style.alignItems = 'center';
+    });
+  }
+
+  if(applyUrl){
+    applyUrl.addEventListener('click', e=>{
+      e.preventDefault();
+      const v = urlField.value.trim();
+      if(!v) return;
+      setHero(v);
+    });
+  }
+
+  if(removeBtn){
+    removeBtn.addEventListener('click', e=>{ e.preventDefault(); setHero(''); });
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const saved = localStorage.getItem('heroBg');
+    if(saved){ setHero(saved); }
+  });
+})();
+</script>
+
+<div class="divider"></div>
+
+<!-- LATAR BELAKANG -->
+<section id="latar">
+  <div class="container">
+    <p class="section-label">01 · Latar Belakang</p>
+    <h2 class="section-title">Apa Itu Car Free Day?</h2>
+    <p class="section-body reveal">
+      Car Free Day (CFD) atau Hari Bebas Kendaraan Bermotor (HBKB) adalah program pemerintah DKI Jakarta yang membatasi kendaraan bermotor di kawasan Jl. Sudirman–Thamrin setiap hari Minggu pagi. Program ini bertujuan memberikan ruang publik yang sehat, bebas polusi, dan nyaman bagi warga Jakarta. Namun di balik ketertiban yang dituju, muncul konflik antara aparat dan pedagang kaki lima (PKL) yang menggantungkan hidup dari aktivitas di kawasan tersebut.
+    </p>
+    <div class="info-grid">
+      <div class="info-card reveal">
+        <span class="info-icon">🌿</span>
+        <h3>Tujuan CFD</h3>
+        <p>Mengurangi polusi udara, menyediakan ruang olahraga masyarakat, mendorong aktivitas sosial, dan menciptakan lingkungan yang lebih sehat di pusat kota Jakarta.</p>
+      </div>
+      <div class="info-card reveal">
+        <span class="info-icon">📜</span>
+        <h3>Aturan Pemerintah</h3>
+        <p>Pemerintah DKI Jakarta menetapkan larangan berdagang di jalur utama CFD. Penegakan dilakukan oleh Satpol PP dan aparat terkait berdasarkan Perda ketertiban umum.</p>
+      </div>
+      <div class="info-card reveal">
+        <span class="info-icon">🛒</span>
+        <h3>Realita PKL</h3>
+        <p>Bagi sebagian pedagang, CFD adalah sumber penghasilan utama mingguan. Mereka tidak memiliki tempat usaha tetap, dan akhir pekan CFD menjadi harapan ekonomi keluarga.</p>
+      </div>
+      <div class="info-card reveal">
+        <span class="info-icon">📱</span>
+        <h3>Pemicu Viral</h3>
+        <p>Kasus menjadi perhatian luas setelah video penertiban pedagang es krim oleh Satpol PP beredar di media sosial pada Mei 2026, memicu gelombang kritik dari warganet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- KRONOLOGI -->
+<section id="kronologi">
+  <div class="container">
+    <p class="section-label">02 · Kronologi</p>
+    <h2 class="section-title">Alur Kejadian</h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">🕒 2023</div>
+        <h3 class="tl-title">Pengetatan Aturan</h3>
+        <p class="tl-body">Aturan larangan berdagang di jalur utama CFD Sudirman–Thamrin mulai diperketat oleh Pemerintah DKI Jakarta. Dasar kebijakan diperkuat untuk menjaga ketertiban dan kenyamanan ruang publik.</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">📍 Awal 2026</div>
+        <h3 class="tl-title">Penertiban Rutin</h3>
+        <p class="tl-body">Satpol PP melakukan penertiban secara rutin terhadap PKL yang berjualan di sepanjang jalur utama CFD. Banyak pedagang terpaksa dipindah atau dibubarkan setiap minggunya.</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">📢 Mei 2026</div>
+        <h3 class="tl-title">Video Viral</h3>
+        <p class="tl-body">Video seorang pedagang es krim yang ditertibkan oleh petugas Satpol PP dengan cara yang dianggap kurang humanis menyebar luas di media sosial dan menjadi viral di seluruh Indonesia.</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">📱 Setelah Viral</div>
+        <h3 class="tl-title">Reaksi Publik</h3>
+        <p class="tl-body">Masyarakat merespons melalui media sosial. Muncul dua kubu: yang mendukung aturan CFD dan yang mengkritik cara penertiban. Empati terhadap nasib pedagang kecil mengalir deras.</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">✅ Evaluasi Pemerintah</div>
+        <h3 class="tl-title">Satpol PP Minta Maaf</h3>
+        <p class="tl-body">Satpol PP DKI Jakarta menyatakan permohonan maaf dan berjanji untuk mengevaluasi pendekatan penertiban agar lebih humanis. Pemerintah membuka dialog untuk mencari solusi bersama.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ISI POLEMIK -->
+<section id="polemik">
+  <div class="container">
+    <p class="section-label">03 · Isi Polemik</p>
+    <h2 class="section-title">Tiga Sudut Pandang</h2>
+    <div class="polemik-grid">
+      <div class="polemik-card reveal">
+        <h3>🏛️ Alasan Pemerintah</h3>
+        <ul>
+          <li>Menjaga fungsi utama CFD sebagai ruang publik</li>
+          <li>Mengurangi kepadatan dan kemacetan pejalan kaki</li>
+          <li>Menghindari timbulan sampah di kawasan CFD</li>
+          <li>Mengurangi risiko keamanan dan keselamatan</li>
+          <li>Menertibkan PKL liar tanpa izin resmi</li>
+          <li>Menjaga keindahan dan estetika kawasan Sudirman</li>
+        </ul>
+      </div>
+      <div class="polemik-card reveal">
+        <h3>🛺 Sudut Pandang Pedagang</h3>
+        <ul>
+          <li>CFD adalah sumber pendapatan tambahan yang vital</li>
+          <li>Banyak pedagang tidak punya tempat usaha tetap</li>
+          <li>Penghasilan akhir pekan cukup membantu keluarga</li>
+          <li>Tidak ada sosialisasi alternatif tempat berjualan</li>
+          <li>Penertiban dilakukan tanpa peringatan yang cukup</li>
+          <li>Tidak ada program pemberdayaan sebagai pengganti</li>
+        </ul>
+      </div>
+      <div class="polemik-card reveal">
+        <h3>👥 Reaksi Masyarakat</h3>
+        <ul>
+          <li><strong>Kelompok 1:</strong> Mendukung aturan — CFD harus bebas PKL demi ketertiban</li>
+          <li><strong>Kelompok 2:</strong> Menolak cara penertiban — bukan pedagangnya yang salah, tapi caranya</li>
+          <li><strong>Kelompok 3:</strong> Mengusulkan solusi tengah — zona khusus, pendataan, jam tertentu</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRO KONTRA -->
+<section id="prokontra">
+  <div class="container">
+    <p class="section-label">04 · Pro-Kontra</p>
+    <h2 class="section-title">Dua Sisi Perdebatan</h2>
+    <div class="pk-grid">
+      <div class="pk-card pk-pro reveal">
+        <h3>✔ Pihak yang Mendukung</h3>
+        <div class="pk-item"><span class="pk-icon-pro">✓</span><span>CFD menjadi lebih nyaman dan tertib untuk olahraga</span></div>
+        <div class="pk-item"><span class="pk-icon-pro">✓</span><span>Aktivitas olahraga masyarakat tidak terganggu</span></div>
+        <div class="pk-item"><span class="pk-icon-pro">✓</span><span>Kebersihan kawasan CFD lebih terjaga</span></div>
+        <div class="pk-item"><span class="pk-icon-pro">✓</span><span>Aturan hukum ditegakkan secara konsisten</span></div>
+        <div class="pk-item"><span class="pk-icon-pro">✓</span><span>Ruang publik difungsikan sesuai tujuan semula</span></div>
+      </div>
+      <div class="pk-card pk-kontra reveal">
+        <h3>✖ Pihak yang Menolak</h3>
+        <div class="pk-item"><span class="pk-icon-kontra">✗</span><span>Pedagang kehilangan sumber pemasukan mingguan</span></div>
+        <div class="pk-item"><span class="pk-icon-kontra">✗</span><span>Cara penertiban dianggap tidak manusiawi</span></div>
+        <div class="pk-item"><span class="pk-icon-kontra">✗</span><span>Kurangnya solusi alternatif dari pemerintah</span></div>
+        <div class="pk-item"><span class="pk-icon-kontra">✗</span><span>Tidak ada perlindungan bagi ekonomi rakyat kecil</span></div>
+        <div class="pk-item"><span class="pk-icon-kontra">✗</span><span>Tidak ada dialog sebelum penertiban dilakukan</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- REFORMASI -->
+<section id="reformasi">
+  <div class="container">
+    <p class="section-label">05 · Hubungan dengan Reformasi</p>
+    <h2 class="section-title">Nilai-Nilai Reformasi dalam Kasus Ini</h2>
+    <p class="section-body reveal">Kasus polemik PKL CFD mencerminkan nilai-nilai yang diperjuangkan sejak era Reformasi 1998. Masyarakat kini memiliki kebebasan lebih luas untuk mengkritik pemerintah, menyampaikan pendapat, dan mengawasi jalannya kekuasaan.</p>
+    <div class="ref-grid">
+      <div class="ref-card reveal">
+        <h4>🗳️ Demokrasi</h4>
+        <p>Masyarakat bebas menyampaikan kritik terhadap kebijakan pemerintah secara terbuka tanpa rasa takut.</p>
+      </div>
+      <div class="ref-card reveal">
+        <h4>📰 Kebebasan Pers</h4>
+        <p>Media massa memberitakan kasus secara luas dan objektif, mendorong transparansi dan akuntabilitas aparat.</p>
+      </div>
+      <div class="ref-card reveal">
+        <h4>💬 Kebebasan Berpendapat</h4>
+        <p>Warganet leluasa menyampaikan opini lewat media sosial, membentuk tekanan publik yang nyata.</p>
+      </div>
+      <div class="ref-card reveal">
+        <h4>🔍 Transparansi</h4>
+        <p>Pemerintah dituntut terbuka dan responsif terhadap kritik publik, bukan menutup diri dari pengawasan.</p>
+      </div>
+      <div class="ref-card reveal">
+        <h4>👁️ Kontrol Sosial</h4>
+        <p>Masyarakat secara aktif mengawasi perilaku aparat pemerintah sebagai benteng demokrasi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HUKUM -->
+<section id="hukum">
+  <div class="container">
+    <p class="section-label">06 · Perspektif Hukum & Kebijakan</p>
+    <h2 class="section-title">Dasar Hukum Penertiban</h2>
+    <div class="hk-box reveal">
+      <h4>Dasar Kebijakan CFD DKI Jakarta</h4>
+      <p>Pemerintah DKI Jakarta memiliki regulasi resmi terkait penyelenggaraan Hari Bebas Kendaraan Bermotor (HBKB/CFD), yang mencakup pengaturan penggunaan ruang publik, larangan berdagang di jalur utama, serta kewenangan Satpol PP dalam melakukan penertiban.</p>
+      <ul>
+        <li>Menjaga ketertiban umum dan keselamatan pengunjung CFD</li>
+        <li>Memastikan fungsi ruang publik sesuai peruntukannya</li>
+        <li>Memberikan hak warga atas lingkungan yang bersih dan tertib</li>
+        <li>Melindungi kepentingan umum di atas kepentingan individu</li>
+      </ul>
+      <div class="hk-note">
+        Namun, aturan harus dijalankan secara adil, proporsional, dan tidak mengabaikan sisi kemanusiaan. Penertiban yang keras tanpa solusi alternatif justru bertentangan dengan prinsip kebijakan publik yang berkeadilan.
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DAMPAK -->
+<section id="dampak">
+  <div class="container">
+    <p class="section-label">07 · Dampak Polemik</p>
+    <h2 class="section-title">Efek Berganda di Berbagai Bidang</h2>
+    <div class="dampak-grid">
+      <div class="dampak-card reveal">
+        <span class="d-icon">🤝</span>
+        <h4>Dampak Sosial</h4>
+        <ul>
+          <li>Perdebatan publik meningkat tajam</li>
+          <li>Kepercayaan masyarakat pada aparat diuji</li>
+          <li>Empati terhadap pedagang kecil meningkat</li>
+          <li>Solidaritas sosial antarwarga tumbuh</li>
+        </ul>
+      </div>
+      <div class="dampak-card reveal">
+        <span class="d-icon">💰</span>
+        <h4>Dampak Ekonomi</h4>
+        <ul>
+          <li>Pendapatan mingguan pedagang menurun drastis</li>
+          <li>Kehilangan lokasi strategis berjualan</li>
+          <li>Tidak ada kompensasi dari pemerintah</li>
+          <li>Keluarga pedagang ikut terdampak</li>
+        </ul>
+      </div>
+      <div class="dampak-card reveal">
+        <span class="d-icon">⚖️</span>
+        <h4>Dampak Politik</h4>
+        <ul>
+          <li>Satpol PP diminta mengevaluasi metode kerja</li>
+          <li>Pemerintah mendapat sorotan dan kritik publik</li>
+          <li>Muncul desakan revisi kebijakan CFD</li>
+          <li>Isu masuk agenda media nasional</li>
+        </ul>
+      </div>
+      <div class="dampak-card reveal">
+        <span class="d-icon">📱</span>
+        <h4>Dampak Media Sosial</h4>
+        <ul>
+          <li>Kasus menjadi viral dalam hitungan jam</li>
+          <li>Opini publik terbentuk sangat cepat</li>
+          <li>Meme dan konten satiris bermunculan</li>
+          <li>Jurnalisme warga memainkan peran krusial</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SOLUSI -->
+<section id="solusi">
+  <div class="container">
+    <p class="section-label">08 · Solusi & Jalan Tengah</p>
+    <h2 class="section-title">Gagasan untuk Keadilan Bersama</h2>
+    <div class="solusi-list">
+      <div class="solusi-item reveal">
+        <div class="solusi-num">1</div>
+        <p>Sediakan <strong>zona khusus pedagang kecil</strong> di pinggiran kawasan CFD yang tidak mengganggu jalur utama pejalan kaki.</p>
+      </div>
+      <div class="solusi-item reveal">
+        <div class="solusi-num">2</div>
+        <p>Lakukan <strong>pendataan dan registrasi</strong> pedagang CFD secara resmi agar memiliki identitas dan perlindungan hukum.</p>
+      </div>
+      <div class="solusi-item reveal">
+        <div class="solusi-num">3</div>
+        <p>Terapkan <strong>penertiban humanis</strong> — tanpa kekerasan, dengan sosialisasi awal, dan pendekatan persuasif.</p>
+      </div>
+      <div class="solusi-item reveal">
+        <div class="solusi-num">4</div>
+        <p>Gencarkan <strong>edukasi aturan CFD</strong> kepada pedagang dan masyarakat sebelum penegakan dilakukan.</p>
+      </div>
+      <div class="solusi-item reveal">
+        <div class="solusi-num">5</div>
+        <p>Buka <strong>forum dialog</strong> antara pemerintah, Satpol PP, dan perwakilan pedagang untuk mencari solusi bersama.</p>
+      </div>
+      <div class="solusi-item reveal">
+        <div class="solusi-num">6</div>
+        <p>Kembangkan <strong>area UMKM khusus</strong> di kawasan sekitar CFD yang terintegrasi dan dikelola pemerintah kota.</p>
+      </div>
+      <div class="solusi-item reveal">
+        <div class="solusi-num">7</div>
+        <p>Tetapkan <strong>jam-jam tertentu</strong> di luar jam puncak olahraga untuk aktivitas jual-beli terbatas di zona yang ditetapkan.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ANALISIS -->
+<section id="analisis">
+  <div class="container">
+    <p class="section-label">09 · Opini & Analisis</p>
+    <h2 class="section-title">Membedah Akar Masalah</h2>
+    <div class="analisis-split">
+      <div class="analisis-box reveal">
+        <h4>Analisis Sosial</h4>
+        <p>Kasus ini menunjukkan benturan antara dua kepentingan yang sama-sama sah: kepentingan publik atas ruang kota yang tertib dan bersih, serta hak ekonomi rakyat kecil yang tidak memiliki pilihan lain. Ketegangan ini bukan masalah baru — ia adalah cerminan ketimpangan struktural yang belum terselesaikan. Tanpa intervensi kebijakan yang sistemik, polemik serupa akan terus berulang.</p>
+      </div>
+      <div class="analisis-box reveal">
+        <h4>Analisis Reformasi</h4>
+        <p>Media sosial telah menjadi arena demokrasi modern. Kasus ini membuktikan bahwa suara rakyat kini dapat mengubah kebijakan — sesuatu yang mustahil di era sebelum Reformasi 1998. Viralnya video pedagang es krim adalah wujud nyata kebebasan pers dan ekspresi publik yang menjadi warisan penting Reformasi. Kontrol sosial dari bawah terbukti efektif mendorong akuntabilitas aparat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- POLLING -->
+<section id="polling">
+  <div class="container">
+    <p class="section-label">10 · Pendapat Anda</p>
+    <h2 class="section-title">Suarakan Pandangan Anda</h2>
+    <div class="poll-box">
+      <p class="poll-question">Menurut Anda, apakah pedagang kaki lima boleh berjualan di kawasan CFD?</p>
+      <button class="poll-btn" onclick="vote(0)">
+        <div class="poll-bar" id="bar0"></div>
+        <span>✅ Ya, mereka berhak berjualan di sana</span>
+        <span class="poll-pct" id="pct0">0%</span>
+      </button>
+      <button class="poll-btn" onclick="vote(1)">
+        <div class="poll-bar" id="bar1"></div>
+        <span>❌ Tidak, CFD harus bebas dari pedagang</span>
+        <span class="poll-pct" id="pct1">0%</span>
+      </button>
+      <button class="poll-btn" onclick="vote(2)">
+        <div class="poll-bar" id="bar2"></div>
+        <span>🤝 Boleh, tapi dengan aturan dan zona khusus</span>
+        <span class="poll-pct" id="pct2">0%</span>
+      </button>
+      <p class="poll-total" id="poll-total">Belum ada suara</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container">
+    <p class="section-label">11 · FAQ</p>
+    <h2 class="section-title">Pertanyaan yang Sering Muncul</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Apa itu CFD dan mengapa dibuat?<span class="faq-arrow">+</span></div>
+        <div class="faq-a">Car Free Day (CFD) atau Hari Bebas Kendaraan Bermotor adalah program pemerintah DKI Jakarta yang menutup Jl. Sudirman–Thamrin dari kendaraan bermotor setiap hari Minggu pagi. Program ini diciptakan untuk menyediakan ruang publik yang sehat, mengurangi polusi, dan memberikan warga tempat berolahraga serta beraktivitas sosial di pusat kota.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Siapa yang melakukan penertiban PKL di CFD?<span class="faq-arrow">+</span></div>
+        <div class="faq-a">Penertiban dilakukan oleh Satuan Polisi Pamong Praja (Satpol PP) DKI Jakarta sebagai aparat penegak Peraturan Daerah. Mereka bertugas memastikan kawasan CFD bebas dari pedagang liar sesuai regulasi yang berlaku.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Mengapa masyarakat marah terhadap penertiban ini?<span class="faq-arrow">+</span></div>
+        <div class="faq-a">Kemarahan masyarakat dipicu oleh cara penertiban yang dianggap tidak humanis — terutama setelah video viral yang memperlihatkan pedagang es krim diperlakukan secara keras. Publik tidak hanya mempermasalahkan aturannya, melainkan pendekatan aparat yang dinilai kurang empati terhadap rakyat kecil.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Apakah pemerintah sudah memberikan respons?<span class="faq-arrow">+</span></div>
+        <div class="faq-a">Ya. Satpol PP DKI Jakarta menyampaikan permohonan maaf atas cara penertiban yang terjadi dan berkomitmen untuk mengevaluasi pendekatan di lapangan. Pemerintah juga membuka diskusi untuk mencari solusi yang lebih berkeadilan bagi semua pihak.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Apa solusi terbaik untuk kasus ini?<span class="faq-arrow">+</span></div>
+        <div class="faq-a">Banyak pihak mengusulkan pembentukan zona UMKM khusus di sekitar kawasan CFD yang tidak mengganggu jalur utama. Selain itu, dialog antara pemerintah dan pedagang, pendataan resmi PKL, serta program pemberdayaan ekonomi juga dianggap sebagai langkah krusial untuk menyelesaikan masalah secara berkelanjutan.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Apa kaitannya dengan era Reformasi?<span class="faq-arrow">+</span></div>
+        <div class="faq-a">Reformasi 1998 membuka pintu kebebasan berpendapat, pers, dan demokrasi di Indonesia. Kasus ini mencerminkan bagaimana nilai-nilai reformasi hidup dalam masyarakat modern — melalui media sosial sebagai arena demokrasi, tekanan publik yang mengubah sikap pemerintah, dan kesadaran masyarakat untuk mengawasi aparat negara.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- GALERI -->
+<section id="galeri">
+  <div class="container">
+    <p class="section-label">12 · Galeri</p>
+    <h2 class="section-title">Dokumentasi Visual</h2>
+    
+    <div class="doc-slider" id="doc-slider">
+      <button class="doc-prev" aria-label="Sebelumnya">‹</button>
+      <div class="doc-viewport">
+        <div class="doc-track">
+          <div class="doc-slide"><img id="FTO DOKUMENTASI 1.jpeg" src="FTO DOKUMENTASI 1.jpeg" alt="Dokumentasi 1"></div>
+          <div class="doc-slide"><img id="FTO DOKUMENTASI 2.jpeg" src="FTO DOKUMENTASI 2.jpeg" alt="Dokumentasi 2"></div>
+        </div>
+      </div>
+      <button class="doc-next" aria-label="Berikutnya">›</button>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- KESIMPULAN -->
+<section id="kesimpulan">
+  <div class="container">
+    <p class="section-label">13 · Kesimpulan</p>
+    <h2 class="section-title">Pelajaran dari Polemik ini</h2>
+    <div class="kesim-box reveal">
+      <p>Polemik PKL di CFD Sudirman–Thamrin bukan sekadar konflik antara pedagang dan aparat. Ini adalah cerminan dari tantangan tata kelola kota modern: bagaimana menyeimbangkan kepentingan ruang publik dengan hak ekonomi masyarakat kecil.</p>
+      <div class="kesim-highlight">
+        Ketertiban kota memang penting, namun cara mencapainya haruslah manusiawi, berkeadilan, dan melibatkan suara rakyat.
+      </div>
+      <p>Dalam semangat Reformasi, kasus ini mengingatkan kita bahwa demokrasi bukan hanya tentang pemilu — melainkan juga tentang bagaimana pemerintah mendengar, menghormati, dan melindungi warganya dalam kehidupan sehari-hari.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- REFERENSI -->
+<section id="referensi">
+  <div class="container">
+    <p class="section-label">14 · Referensi</p>
+    <h2 class="section-title">Sumber & Rujukan</h2>
+    <ol class="ref-list">
+      <li>Berita media online nasional tentang penertiban PKL CFD Mei 2026 (Kompas, Detik, Tempo)</li>
+      <li>Pernyataan resmi Satpol PP DKI Jakarta terkait evaluasi penertiban CFD</li>
+      <li>Akun media sosial resmi Pemerintah Provinsi DKI Jakarta (@dkijakarta)</li>
+      <li>Peraturan Daerah DKI Jakarta tentang Ketertiban Umum dan Pengelolaan Ruang Publik</li>
+      <li>Artikel kebijakan publik: "Ruang Publik, PKL, dan Keadilan Sosial"</li>
+      <li>Dokumentasi video viral penertiban pedagang es krim CFD (Mei 2026)</li>
+      <li>Pernyataan Gubernur DKI Jakarta terkait program HBKB/CFD</li>
+      <li>Data statistik pengunjung CFD dari Dinas Perhubungan DKI Jakarta</li>
+      <li>Laporan lembaga advokasi PKL Jakarta tentang kondisi pedagang informal</li>
+      <li>Referensi sejarah Reformasi 1998: "Demokrasi Pasca-Soeharto"</li>
+    </ol>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">CFD Polemik · Jakarta 2026</div>
+  <div class="footer-info">
+    <strong>Ardillia Putri Hartanto (03)</strong> · Mata Pelajaran Sejarah · <strong>Swa'ana Salwa Igrimatul Aisyah (34)</strong><br>
+    XI SIJA 2 · SMK NEGERI 7 SEMARANG 
+  </div>
+  <div class="footer-copy">“Reformasi mengajarkan bahwa suara rakyat memiliki kekuatan untuk membawa perubahan.” · 2026</div>
+</footer>
+
+<script>
+  // LOADING
+  window.addEventListener('load', () => {
+    setTimeout(() => { document.getElementById('loading').classList.add('hide'); }, 2000);
+  });
+
+  // BACK TO TOP
+  window.addEventListener('scroll', () => {
+    const btt = document.getElementById('btt');
+    if (window.scrollY > 400) btt.classList.add('show');
+    else btt.classList.remove('show');
+  });
+
+  // SCROLL REVEAL
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal, .tl-item').forEach(el => observer.observe(el));
+  // NAV HIGHLIGHT: beri tanda pada nav sidebar sesuai section yang terlihat
+  (function(){
+    const navLinks = document.querySelectorAll('.nav-links a');
+    const sections = Array.from(document.querySelectorAll('section[id]'));
+    if (!navLinks.length || !sections.length) return;
+
+    const navObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const id = entry.target.id;
+        const link = document.querySelector(`.nav-links a[href="#${id}"]`);
+        if (entry.isIntersecting) {
+          navLinks.forEach(a => a.classList.remove('active'));
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { threshold: 0.6 });
+
+    sections.forEach(s => navObserver.observe(s));
+
+    // klik langsung menandai link (UX lebih responsif pada klik)
+    navLinks.forEach(a => a.addEventListener('click', () => {
+      navLinks.forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+    }));
+  })();
+
+  // POLLING
+  let votes = [0, 0, 0];
+  let voted = false;
+  function vote(idx) {
+    if (voted) return;
+    voted = true;
+    votes[idx]++;
+    const total = votes.reduce((a, b) => a + b, 0);
+    document.querySelectorAll('.poll-btn').forEach((btn, i) => {
+      btn.classList.add('voted');
+      const pct = Math.round((votes[i] / total) * 100);
+      document.getElementById('bar' + i).style.width = pct + '%';
+      document.getElementById('pct' + i).textContent = pct + '%';
+    });
+    document.getElementById('poll-total').textContent = total + ' suara';
+  }
+
+  // FAQ
+  function toggleFaq(el) {
+    const item = el.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  // DOCUMENTATION SLIDER (2 gambar)
+  (function(){
+    const track = document.querySelector('.doc-track');
+    const slides = document.querySelectorAll('.doc-slide');
+    const prev = document.querySelector('.doc-prev');
+    const next = document.querySelector('.doc-next');
+    const viewport = document.querySelector('.doc-viewport');
+    let index = 0;
+    function update(){ if(track) track.style.transform = `translateX(-${index*100}%)`; }
+    prev?.addEventListener('click', ()=>{ index = Math.max(0, index-1); update(); });
+    next?.addEventListener('click', ()=>{ index = Math.min(slides.length-1, index+1); update(); });
+
+    // Drag / swipe support
+    let startX = 0; let dragging = false;
+    viewport?.addEventListener('pointerdown', e=>{ dragging = true; startX = e.clientX; viewport.setPointerCapture(e.pointerId); if(track) track.style.transition = 'none'; });
+    viewport?.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      const dx = e.clientX - startX;
+      if(track) track.style.transform = `translateX(${ -index*100 + (dx / viewport.clientWidth) * 100 }%)`;
+    });
+    viewport?.addEventListener('pointerup', e=>{
+      if(!dragging) return; dragging = false;
+      const dx = e.clientX - startX;
+      if(track) track.style.transition = 'transform 0.35s ease';
+      if(Math.abs(dx) > viewport.clientWidth * 0.15){ if(dx < 0) index = Math.min(slides.length-1, index+1); else index = Math.max(0, index-1); }
+      update();
+    });
+
+    // keyboard
+    document.addEventListener('keydown', e=>{ if(e.key === 'ArrowLeft') prev?.click(); if(e.key === 'ArrowRight') next?.click(); });
+    update();
+  })();
+
+  // STAGGERED DELAYS
+  document.querySelectorAll('.info-card, .ref-card, .dampak-card, .solusi-item').forEach((el, i) => {
+    el.style.transitionDelay = (i * 0.08) + 's';
+  });
+
+  // PARALLAX HERO EFFECT
+  window.addEventListener('scroll', () => {
+    const heroBg = document.querySelector('.hero-bg');
+    if (heroBg) {
+      heroBg.style.transform = `translateY(${window.scrollY * 0.45}px)`;
+    }
+  });
+
+  // ENHANCED REVEAL ANIMATIONS
+  const enhancedReveal = document.querySelectorAll('.reveal, .team-card, .polemik-card, .dampak-card, .ref-card');
+  const enhancedObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, idx) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+          entry.target.style.animation = 'fadeUp 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+        }, idx * 50);
+        enhancedObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -20px 0px' });
+  enhancedReveal.forEach(el => enhancedObserver.observe(el));
+
+  // INSTAGRAM LINK HANDLER for Team Members
+  document.querySelectorAll('.team-member-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      let ig = link.getAttribute('data-instagram') || '';
+      // normalize common placeholder formats: trim, remove leading 'username_' and optional '@ardilliyya'
+      ig = ig.trim().replace(/^username_@?/i, '').replace(/^@/, '').replace(/@ardilliyya$/, '');
+      if (ig) {
+        window.open(`https://instagram.com/${encodeURIComponent(ig)}`, '_blank');
+      } else {
+        alert('Silakan isi username Instagram pada atribut data-instagram terlebih dahulu.');
+      }
+    });
+    link.addEventListener('mouseenter', () => { link.style.textShadow = '0 0 12px rgba(200, 151, 58, 0.5)'; });
+    link.addEventListener('mouseleave', () => { link.style.textShadow = 'none'; });
+  });
+
+  // SECTION LABEL PULSE
+  document.querySelectorAll('.section-label').forEach((label, idx) => {
+    label.style.animation = `pulse 3s ease-in-out ${idx * 0.1}s infinite`;
+  });
+
+  // SMOOTH NAV SCROLL
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (href.startsWith('#') && href.length > 1 && document.querySelector(href)) {
+        e.preventDefault();
+        document.querySelector(href).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // SCROLL-DEPENDENT CARD OPACITY
+  (function(){
+    let ticking = false;
+    const cards = document.querySelectorAll('.info-card, .polemik-card, .dampak-card');
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          cards.forEach(card => {
+            const rect = card.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+              card.style.opacity = 1 - Math.abs(rect.top - window.innerHeight / 2) / (window.innerHeight * 0.55) * 0.3;
+            }
+          });
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+  })();
+</script>
+</body>
+</html>
